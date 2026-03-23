@@ -22,39 +22,7 @@ https://youtu.be/7XFFWW66EUo
 
 ## Architecture
 
-```
-Browser (React)
-     │
-     │  HTTPS
-     ▼
-  Nginx (port 80)
-     │
-     ├── /          →  React static build (dist/)
-     └── /api/*     →  Fastify API (port 4000)
-                              │
-                    ┌─────────┴──────────┐
-                    │                    │
-               OpenAI GPT-4o       MCP Server
-               (tool-calling)    (child process)
-                                       │
-                                  Prisma ORM
-                                       │
-                                  PostgreSQL
-```
-
----
-
-## Why MCP?
-
-The AI layer is decoupled from the database via the **Model Context Protocol** — a JSON-RPC 2.0 standard for AI tool routing.
-
-Instead of importing database functions directly into the OpenAI service, the backend spawns an MCP server as a child process. GPT-4o discovers and calls tools through the protocol. This means:
-
-- The database layer is fully swappable without touching the AI layer
-- Tools can be tested independently of the LLM
-- The architecture scales to multiple AI clients sharing one tool server
-
----
+<img width="960" height="820" alt="architecture" src="https://github.com/user-attachments/assets/55e3dc95-73e5-40aa-82fb-e29d82ca14a1" />
 
 ## Tech Stack
 
@@ -113,23 +81,3 @@ PORT=4000
 ```
 
 ---
-
-## Project Structure
-
-```
-├── front-end/
-│   └── src/
-│       ├── components/
-│       │   ├── chat/         # ChatScreen, MessageBubble, TypingIndicator
-│       │   ├── intake/       # Patient intake form
-│       │   └── shared/       # SlotPicker, ConfirmationCard, PrescriptionCards
-│       └── api/              # Centralised API client
-│
-└── back-end/
-    └── src/
-        ├── mcp/              # MCP server (official SDK, stdio transport)
-        ├── services/         # MCP client, OpenAI tool-calling loop
-        ├── routes/           # Fastify route handlers
-        ├── plugins/          # Prisma plugin
-        └── utils/            # Mailer (AWS SES)
-```
