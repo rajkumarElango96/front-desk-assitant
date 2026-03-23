@@ -17,6 +17,9 @@ Built as a full-stack demonstration of AI tool routing via the **Model Context P
 
 ---
 
+## DEMO
+https://youtu.be/7XFFWW66EUo
+
 ## Architecture
 
 ```
