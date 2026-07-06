@@ -1,12 +1,12 @@
 'use strict'
 
-const OpenAI    = require('openai')
-const mcpClient = require('./mcp-client')
+const OpenAI = require('openai')
+const tools  = require('./tools')
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const SYSTEM_PROMPT = `
-You are Kara, an AI medical assistant for Kyron Medical. You help patients:
+You are Amara, an AI medical assistant. You help patients:
 - Schedule appointments with the right specialist based on their symptoms
 - Check their upcoming and past appointments
 - View their prescriptions and refill status
@@ -41,12 +41,13 @@ General:
 /**
  * runChat
  *
+ * @param {object} prisma
  * @param {string} patientId
  * @param {Array}  conversationHistory
  * @param {string} newMessage
  * @returns {{ reply: string, updatedHistory: Array, slotsData: object|null }}
  */
-async function runChat(patientId, conversationHistory, newMessage) {
+async function runChat(prisma, patientId, conversationHistory, newMessage) {
   const messages = [
     {
       role:    'system',
@@ -56,12 +57,10 @@ async function runChat(patientId, conversationHistory, newMessage) {
     { role: 'user', content: newMessage },
   ]
 
-  const tools = await mcpClient.getOpenAITools()
-
   let response = await client.chat.completions.create({
     model:       'gpt-4o',
     messages,
-    tools,
+    tools:       tools.TOOL_DEFINITIONS,
     tool_choice: 'auto',
   })
 
@@ -75,7 +74,7 @@ async function runChat(patientId, conversationHistory, newMessage) {
     const toolResults = await Promise.all(
       assistantMessage.tool_calls.map(async (toolCall) => {
         const args   = JSON.parse(toolCall.function.arguments)
-        const result = await mcpClient.callTool(toolCall.function.name, args)
+        const result = await tools.executeTool(prisma, toolCall.function.name, args)
 
         // Capture available slots so the frontend can render slot cards
         if (toolCall.function.name === 'find_available_slots' && result.available) {
@@ -95,7 +94,7 @@ async function runChat(patientId, conversationHistory, newMessage) {
     response = await client.chat.completions.create({
       model:       'gpt-4o',
       messages,
-      tools,
+      tools:       tools.TOOL_DEFINITIONS,
       tool_choice: 'auto',
     })
   }

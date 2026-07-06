@@ -1,6 +1,6 @@
-# Kyron Medical — Backend
+# Amara — Backend
 
-Fastify REST API powering the Kyron Medical patient-facing chat assistant (Kara).
+Fastify REST API powering the Amara patient-facing chat assistant.
 
 ## Architecture
 
@@ -15,24 +15,21 @@ Fastify API  (port 4000)
       │                               │
       │                               │ tool_calls
       │                               ▼
-      │                        MCP Client (mcp-client.js)
-      │                               │  JSON-RPC 2.0 over stdio
+      │                        tools.js (in-process)
+      │                               │
       │                               ▼
-      │                        MCP Server (kyron-medical-server.js)
-      │                               │  child process
-      │                               ▼
-      │                        Prisma ORM ──► PostgreSQL
+      │                        Prisma ──► PostgreSQL
       │
       ├── /api/voice/call  ──►  Vapi.ai REST API
       │                               │
       │                               │ tool webhook
       │                               ▼
-      └── /api/voice/tool  ──►  MCP Client → Prisma → DB
+      └── /api/voice/tool  ──►  tools.js → Prisma → DB
 ```
 
 ### Key design decisions
 
-**MCP (Model Context Protocol)** — The AI layer communicates with the database through an MCP server running as a child process over stdio. This decouples the AI orchestration layer from the data layer — swapping GPT-4o for Claude requires changing only `openai.js`, not the tool implementations.
+**Tools as plain functions, not a separate service** — `tools.js` defines the OpenAI tool schemas and their Prisma-backed implementations in one file, called directly from `openai.js`'s tool-calling loop. There's exactly one AI consumer in this app, so there's no need for a standalone tool server behind a wire protocol (we evaluated and deliberately moved away from an MCP-based split) — that indirection only pays for itself when multiple independent AI clients share one tool server.
 
 **Atomic booking with double-booking prevention** — `$transaction([appointment.create, slot.update])` combined with a `@@unique([providerId, slotDate, slotStartTime])` DB constraint and P2002 error handling prevents race conditions.
 
@@ -46,7 +43,7 @@ Fastify API  (port 4000)
 | ORM | Prisma |
 | Database | PostgreSQL |
 | AI Model | GPT-4o (OpenAI) |
-| Tool Protocol | MCP (JSON-RPC 2.0 over stdio, hand-rolled) |
+| Tool calling | Plain in-process functions (`services/tools.js`) |
 | Voice | Vapi.ai (outbound calls + server-side tool webhooks) |
 | Email | Nodemailer (Gmail SMTP) |
 | API Docs | Swagger UI at `/docs` |
@@ -59,7 +56,7 @@ Fastify API  (port 4000)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/chat/message` | Send message to Kara (AI assistant) |
+| POST | `/api/chat/message` | Send message to Amara (AI assistant) |
 | POST | `/api/voice/call` | Initiate Vapi outbound voice call |
 | POST | `/api/voice/tool` | Vapi tool webhook (executes tools server-side) |
 | POST | `/api/patients` | Register a new patient |
@@ -71,7 +68,7 @@ Fastify API  (port 4000)
 
 Full docs at `http://localhost:4000/docs`
 
-## MCP Tools
+## AI Tools
 
 | Tool | Description |
 |------|-------------|
@@ -103,13 +100,13 @@ node src/index.js
 ## Environment Variables
 
 ```env
-DATABASE_URL=postgresql://user@localhost:5432/kyron_medical
+DATABASE_URL=postgresql://user@localhost:5432/meddesk
 OPENAI_API_KEY=sk-...
 
 # Email (Gmail SMTP)
 SMTP_USER=yourname@gmail.com
 SMTP_PASS=xxxx xxxx xxxx xxxx    # Gmail App Password
-SMTP_FROM="Kyron Medical <yourname@gmail.com>"
+SMTP_FROM="Amara <yourname@gmail.com>"
 
 # Vapi voice calls
 VAPI_API_KEY=...
@@ -120,7 +117,7 @@ VAPI_SERVER_URL=https://your-public-url.com   # EC2 domain or ngrok URL for loca
 ## What's Complete
 
 - Patient intake and registration
-- AI chat with GPT-4o and full tool calling via MCP
+- AI chat with GPT-4o and full tool calling (in-process, Prisma-backed)
 - Slot availability search by specialty and date
 - Appointment booking with double-booking prevention
 - Appointment cancellation with slot release

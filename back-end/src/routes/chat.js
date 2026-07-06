@@ -15,7 +15,7 @@ module.exports = async function (fastify) {
   fastify.post('/message', {
     schema: {
       tags: ['Chat'],
-      summary: 'Send a message to Kara — the Kyron Medical AI assistant',
+      summary: 'Send a message to Amara — the AI assistant',
       body: {
         type: 'object',
         required: ['patientId', 'message'],
@@ -45,8 +45,8 @@ module.exports = async function (fastify) {
     const patient = await fastify.prisma.patient.findUnique({ where: { patientId } })
     if (!patient) return reply.code(404).send({ error: 'Patient not found' })
 
-    // prisma no longer passed — MCP server owns its own Prisma connection
     const { reply: aiReply, updatedHistory, slotsData } = await runChat(
+      fastify.prisma,
       patientId,
       conversationHistory,
       message

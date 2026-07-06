@@ -23,12 +23,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-anim" style={{ height:"100vh",overflow:"hidden",position:"relative" }}>
-
-      {/* Background blobs — always visible */}
-      <div className="blob" style={{ width:700,height:700,background:"rgba(37,99,235,.11)",top:-250,right:-220 }}/>
-      <div className="blob" style={{ width:500,height:500,background:"rgba(6,182,212,.07)",bottom:-150,left:-120,animationDelay:"7s" }}/>
-      <div className="blob" style={{ width:350,height:350,background:"rgba(139,92,246,.07)",top:"35%",left:"40%",animationDelay:"11s" }}/>
+    <div style={{ height:"100vh",overflow:"hidden",position:"relative",background:"#2563eb" }}>
 
       {/* ── Intake state: centered card ── */}
       {intakeOpen && !patient && (

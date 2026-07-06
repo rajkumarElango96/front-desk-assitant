@@ -17,16 +17,16 @@ module.exports = async function (fastify) {
     return patient
   })
 
-  // POST /api/patients — create a patient
+  // POST /api/patients — register new patient or return existing by email
   fastify.post('/', {
     schema: {
       body: {
         type: 'object',
-        required: ['firstName', 'lastName', 'dob', 'email'],
+        required: ['email'],
         properties: {
           firstName: { type: 'string' },
           lastName:  { type: 'string' },
-          dob:       { type: 'string', format: 'date' },
+          dob:       { type: 'string' },
           email:     { type: 'string', format: 'email' },
           phone:     { type: 'string' },
         },
@@ -34,6 +34,16 @@ module.exports = async function (fastify) {
     },
   }, async (request, reply) => {
     const { firstName, lastName, dob, email, phone } = request.body
+
+    // Returning patient — find by email and return immediately
+    const existing = await fastify.prisma.patient.findUnique({ where: { email } })
+    if (existing) return reply.code(200).send({ ...existing, returning: true })
+
+    // New patient — require all fields
+    if (!firstName || !lastName || !dob) {
+      return reply.code(400).send({ error: 'First name, last name, and date of birth are required for new patients' })
+    }
+
     const patient = await fastify.prisma.patient.create({
       data: {
         firstName,
@@ -43,7 +53,7 @@ module.exports = async function (fastify) {
         phone: phone || null,
       },
     })
-    return reply.code(201).send(patient)
+    return reply.code(201).send({ ...patient, returning: false })
   })
 
   // PATCH /api/patients/:id — update phone or email

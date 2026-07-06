@@ -1,9 +1,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Kyron Medical — API Client
+// Amara — API Client
 // All backend calls go through here. Vite proxies /api → localhost:4000
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BASE = '/api'
+// Local: Vite proxies /api → localhost:4000
+// Production: set VITE_API_BASE_URL=http://<EC2-IP>/api in .env
+const BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 async function request(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {

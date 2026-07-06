@@ -8,13 +8,13 @@ const fastify = require('fastify')({ logger: true })
 fastify.register(require('@fastify/swagger'), {
   openapi: {
     info: {
-      title:       'Kyron Medical API',
-      description: 'Patient-facing API powering the Kyron Medical chat assistant',
+      title:       'Amara API',
+      description: 'Patient-facing API powering the Amara chat assistant',
       version:     '1.0.0',
     },
     servers: [{ url: 'http://localhost:4000' }],
     tags: [
-      { name: 'Chat',          description: 'AI assistant — Kara'          },
+      { name: 'Chat',          description: 'AI assistant — Amara'         },
       { name: 'Patients',      description: 'Patient management'           },
       { name: 'Providers',     description: 'Provider / doctor management' },
       { name: 'Slots',         description: 'Provider slot availability'   },

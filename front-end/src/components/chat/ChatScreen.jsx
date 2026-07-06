@@ -62,7 +62,6 @@ export function ChatScreen({ patient }) {
   const [messages,            setMessages]            = useState([]);
   const [input,               setInput]               = useState("");
   const [typing,              setTyping]              = useState(false);
-  const [smsOpted,            setSmsOpted]            = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [selectedSlot,        setSelectedSlot]        = useState(null);
 
@@ -83,7 +82,7 @@ export function ChatScreen({ patient }) {
       addMsg({
         role: "ai",
         type: "text",
-        text: `Hi ${patient.firstName}! 👋 I'm Kara, your Kyron Medical assistant. I can help you schedule an appointment, check on a prescription, or find our office info. What can I help you with today?`,
+        text: `Hi ${patient.firstName}! I'm Amara, your assistant. I can help you schedule an appointment, check on a prescription, or find our office info. What can I help you with today?`,
       });
     }, 600);
   }, []);
@@ -125,70 +124,47 @@ export function ChatScreen({ patient }) {
     }
   };
 
-  /* ── Slot selected — auto-send booking intent to Kara ── */
+  /* ── Slot selected — auto-send booking intent to Amara ── */
   const handleSlotSelect = (slot, doctor) => {
     setSelectedSlot(slot);
     handleSend(`Book the ${slot.date} at ${slot.time} slot with Dr. ${doctor.name.replace("Dr. ", "")}`);
   };
 
   return (
-    <div style={{ height:"100vh",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden" }}>
-
-      {/* Blobs */}
-      <div className="blob" style={{ width:700,height:700,background:"rgba(37,99,235,.11)",top:-250,right:-220 }}/>
-      <div className="blob" style={{ width:500,height:500,background:"rgba(6,182,212,.07)",bottom:-150,left:-120,animationDelay:"7s" }}/>
-      <div className="blob" style={{ width:350,height:350,background:"rgba(139,92,246,.07)",top:"35%",left:"40%",animationDelay:"11s" }}/>
+    <div style={{ height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:"#2563eb" }}>
 
       {/* ── Header ── */}
-      <div className="glass" style={{ padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:10,flexShrink:0 }}>
+      <div style={{ padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,.15)" }}>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-          <div style={{ width:38,height:38,borderRadius:"50%",background:"linear-gradient(135deg,#2563eb,#06b6d4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff",boxShadow:"0 0 22px rgba(37,99,235,.45)" }}>K</div>
+          <div style={{ width:36,height:36,borderRadius:"50%",background:"#ffffff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#1e3a8a" }}>A</div>
           <div>
-            <div style={{ fontSize:15,fontWeight:800,color:"#f1f5f9",letterSpacing:"-.2px" }}>Kyron Medical</div>
-            <div style={{ fontSize:11,color:"#34d399",display:"flex",alignItems:"center",gap:5 }}>
-              <span style={{ width:6,height:6,borderRadius:"50%",background:"#34d399",display:"inline-block",boxShadow:"0 0 6px #34d399" }}/>
-              Kara · AI Front Desk Assistant
+            <div style={{ fontSize:15,fontWeight:800,color:"#ffffff",letterSpacing:"-.2px" }}>Amara</div>
+            <div style={{ fontSize:11,color:"rgba(255,255,255,.75)",display:"flex",alignItems:"center",gap:5 }}>
+              <span style={{ width:6,height:6,borderRadius:"50%",background:"#34d399",display:"inline-block" }}/>
+              AI Front Desk Assistant
             </div>
           </div>
         </div>
         {/* Patient pill */}
-        <div className="glass fade-in" style={{ padding:"7px 14px",borderRadius:40,display:"flex",alignItems:"center",gap:10 }}>
+        <div style={{ padding:"7px 14px",borderRadius:40,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",gap:10 }}>
           <PatientAvatar initials={patient.initials}/>
           <div>
-            <div style={{ fontSize:13,fontWeight:700,color:"#e2e8f0" }}>{patient.name}</div>
-            <div style={{ fontSize:10,color:"rgba(255,255,255,.35)" }}>DOB: {patient.dob}</div>
+            <div style={{ fontSize:13,fontWeight:700,color:"#ffffff" }}>{patient.name}</div>
+            <div style={{ fontSize:10,color:"rgba(255,255,255,.7)" }}>DOB: {patient.dob}</div>
           </div>
         </div>
       </div>
 
       {/* ── Action buttons — visible until the user sends their first message ── */}
       {messages.length <= 1 && !typing && (
-        <div className="fade-in" style={{ padding:"10px 24px 6px",display:"flex",gap:8,flexWrap:"wrap",position:"relative",zIndex:10,flexShrink:0 }}>
+        <div className="fade-in" style={{ padding:"10px 24px 6px",display:"flex",gap:8,flexWrap:"wrap",flexShrink:0 }}>
           {[
-            { label:"📅  Schedule Appointment", msg:"I'd like to schedule an appointment" },
-            { label:"💊  My Prescriptions",     msg:"Show me my prescriptions"            },
-            { label:"📋  My Appointments",      msg:"Show me my upcoming appointments"    },
-            { label:"🏥  Office Info",           msg:"What are your office hours and location?" },
+            { label:"Schedule Appointment", msg:"I'd like to schedule an appointment" },
+            { label:"My Prescriptions",     msg:"Show me my prescriptions"            },
+            { label:"My Appointments",      msg:"Show me my upcoming appointments"    },
+            { label:"Office Info",          msg:"What are your office hours and location?" },
           ].map(({ label, msg }) => (
-            <button
-              key={label}
-              onClick={() => handleSend(msg)}
-              style={{
-                padding:         "8px 16px",
-                borderRadius:    24,
-                border:          "1px solid rgba(255,255,255,.15)",
-                background:      "rgba(255,255,255,.06)",
-                backdropFilter:  "blur(12px)",
-                color:           "rgba(255,255,255,.75)",
-                fontSize:        12,
-                fontWeight:      600,
-                cursor:          "pointer",
-                letterSpacing:   ".01em",
-                transition:      "background .2s,border-color .2s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.12)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.28)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.15)"; }}
-            >
+            <button key={label} className="chip" onClick={() => handleSend(msg)} style={{ padding:"8px 16px",fontSize:12,fontWeight:600 }}>
               {label}
             </button>
           ))}
@@ -196,14 +172,12 @@ export function ChatScreen({ patient }) {
       )}
 
       {/* ── Messages ── */}
-      <div ref={msgsRef} className="msgs" style={{ flex:1,minHeight:0,overflowY:"auto",padding:"12px 24px 0",display:"flex",flexDirection:"column",gap:18,position:"relative",zIndex:5 }}>
+      <div ref={msgsRef} className="msgs" style={{ flex:1,minHeight:0,overflowY:"auto",padding:"12px 24px 0",display:"flex",flexDirection:"column",gap:16 }}>
         {messages.map(msg => (
           <MessageBubble
             key={msg.id} msg={msg} patient={patient}
             selectedSlot={selectedSlot}
-            smsOpted={smsOpted}
             onSlotSelect={handleSlotSelect}
-            onSmsOpt={() => setSmsOpted(true)}
           />
         ))}
         {typing && <TypingIndicator />}
@@ -211,10 +185,10 @@ export function ChatScreen({ patient }) {
       </div>
 
       {/* ── Input bar ── */}
-      <div className="glass" style={{ padding:"14px 20px",display:"flex",gap:10,alignItems:"center",position:"relative",zIndex:10,flexShrink:0 }}>
+      <div style={{ padding:"14px 20px",display:"flex",gap:10,alignItems:"center",flexShrink:0,borderTop:"1px solid rgba(255,255,255,.15)" }}>
         <input
           ref={inputRef}
-          className="glass-input"
+          className="app-input"
           style={{ flex:1,borderRadius:22,padding:"12px 18px",fontSize:13 }}
           placeholder="Ask about appointments, prescriptions, office hours…"
           value={input}

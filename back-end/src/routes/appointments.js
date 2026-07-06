@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * Appointments Route — Kyron Medical
+ * Appointments Route — Amara
  *
  * SCHEDULING LOGIC OVERVIEW
  * ─────────────────────────

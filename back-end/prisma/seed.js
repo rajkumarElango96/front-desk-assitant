@@ -293,7 +293,7 @@ async function main() {
   })
 
   console.log('✅ Upcoming appointments seeded (confirmed + pending tele)')
-  console.log('\n🎉 Done — kyron_medical seeded with a full week of data.')
+  console.log('\n🎉 Done — meddesk seeded with a full week of data.')
   console.log(`   Providers : 4`)
   console.log(`   Patients  : 3`)
   console.log(`   Slots     : ${slotData.length} (${slotData.length - 3} available, 3 booked)`)

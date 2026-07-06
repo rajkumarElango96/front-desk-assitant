@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * Kyron Medical — Email Utility
+ * Amara — Email Utility
  *
  * Sends appointment confirmation emails via nodemailer + AWS SES (SMTP).
  *
@@ -9,7 +9,7 @@
  *   SMTP_HOST   — SES regional endpoint   e.g. email-smtp.us-east-1.amazonaws.com
  *   SMTP_USER   — SES SMTP username       (IAM access key style, from SES console)
  *   SMTP_PASS   — SES SMTP password       (from SES console — shown only once)
- *   SMTP_FROM   — verified sender address e.g. "Kyron Medical <you@gmail.com>"
+ *   SMTP_FROM   — verified sender address e.g. "Amara <you@gmail.com>"
  *                 Must be a verified identity in AWS SES
  */
 
@@ -46,7 +46,7 @@ async function sendConfirmationEmail(appointment) {
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:12px;">
       <div style="background:linear-gradient(135deg,#2563eb,#06b6d4);padding:24px;border-radius:8px;text-align:center;margin-bottom:24px;">
         <h1 style="color:#fff;margin:0;font-size:22px;font-weight:800;">Appointment Confirmed</h1>
-        <p style="color:rgba(255,255,255,.8);margin:8px 0 0;font-size:14px;">Kyron Medical</p>
+        <p style="color:rgba(255,255,255,.8);margin:8px 0 0;font-size:14px;">Amara</p>
       </div>
 
       <p style="color:#334155;font-size:15px;">Hi ${patientName},</p>
@@ -69,13 +69,13 @@ async function sendConfirmationEmail(appointment) {
       </p>
 
       <div style="border-top:1px solid #e2e8f0;margin-top:24px;padding-top:16px;text-align:center;">
-        <p style="color:#94a3b8;font-size:12px;margin:0;">Kyron Medical · Powered by Kara AI</p>
+        <p style="color:#94a3b8;font-size:12px;margin:0;">Amara · Powered by AI</p>
       </div>
     </div>
   `
 
   await transporter.sendMail({
-    from:    process.env.SMTP_FROM || `"Kyron Medical" <${process.env.SMTP_USER}>`,
+    from:    process.env.SMTP_FROM || `"Amara" <${process.env.SMTP_USER}>`,
     to:      patient.email,
     subject: `Appointment Confirmed — ${providerName} on ${date}`,
     html,

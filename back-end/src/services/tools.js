@@ -1,12 +1,14 @@
 'use strict'
 
 /**
- * Tool Implementations — Kyron Medical AI Layer
+ * Tool Implementations — Amara AI Layer
  *
  * Each function here maps 1:1 to an OpenAI tool definition.
  * GPT-4o decides which tool to call based on the patient's message.
  * We execute directly via Prisma — no HTTP round trip to our own endpoints.
  */
+
+const mailer = require('../utils/mailer')
 
 // ── Tool Definitions (sent to OpenAI) ─────────────────────────────────────────
 const TOOL_DEFINITIONS = [
@@ -163,6 +165,10 @@ async function book_appointment(prisma, { patientId, providerId, slotId, appoint
         data:  { status: 'BOOKED' },
       }),
     ])
+    // Fire confirmation email automatically — non-blocking, don't fail the booking if it fails.
+    mailer.sendConfirmationEmail(appointment).catch((e) =>
+      console.error('[MAILER] Failed to send confirmation email:', e.message)
+    )
     return { success: true, appointment }
   } catch (err) {
     if (err.code === 'P2002') return { success: false, error: 'Slot was just taken by another patient, please choose another' }
