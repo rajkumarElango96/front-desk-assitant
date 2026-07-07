@@ -1,6 +1,6 @@
 # Amara
 
-Amara is an AI front desk assistant for medical practices. Patients chat naturally to book appointments, check prescriptions, and get office info instead of filling out forms or waiting on hold. GPT-4o only decides *which* action to take — every booking, cancellation, and lookup runs as deterministic backend code against Postgres.
+Amara is an AI front desk assistant for medical practices. Patients chat naturally to book appointments, check prescriptions, and get office info instead of filling out forms or waiting on hold. GPT-4o only decides *which* action to take whether it is booking, cancellation, and lookup runs as deterministic backend code against Postgres.
 
 ## Tech Stack
 
