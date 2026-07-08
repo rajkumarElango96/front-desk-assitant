@@ -15,8 +15,8 @@ const TOOL_DEFINITIONS = [
   {
     type: 'function',
     function: {
-      name: 'find_available_slots',
-      description: 'Find available appointment slots by medical specialty and date range. Use when patient wants to schedule an appointment or asks about availability.',
+      name: 'list_providers',
+      description: 'List providers (doctors) for a given medical specialty. Use this FIRST when a patient wants to schedule an appointment, before looking at availability — patients pick a doctor, then you look at that doctor\'s open slots.',
       parameters: {
         type: 'object',
         properties: {
@@ -25,16 +25,37 @@ const TOOL_DEFINITIONS = [
             enum: ['CARDIOLOGY', 'ORTHOPEDICS', 'DERMATOLOGY', 'NEUROLOGY', 'GENERAL'],
             description: 'Medical specialty inferred from patient symptoms or explicit request',
           },
+        },
+        required: ['specialty'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'find_available_slots',
+      description: 'Find the next available appointment slots. Call with a providerId once a specific doctor has been chosen (via list_providers) to get that doctor\'s next 3 openings. Date range is optional — omit it to just get the soonest available slots.',
+      parameters: {
+        type: 'object',
+        properties: {
+          providerId: {
+            type: 'string',
+            description: 'UUID of a specific provider, once the patient has picked one via list_providers',
+          },
+          specialty: {
+            type: 'string',
+            enum: ['CARDIOLOGY', 'ORTHOPEDICS', 'DERMATOLOGY', 'NEUROLOGY', 'GENERAL'],
+            description: 'Medical specialty — only needed if providerId is not yet known',
+          },
           startDate: {
             type: 'string',
-            description: 'Start of date range in YYYY-MM-DD format',
+            description: 'Start of date range in YYYY-MM-DD format. Omit to default to today.',
           },
           endDate: {
             type: 'string',
-            description: 'End of date range in YYYY-MM-DD format',
+            description: 'End of date range in YYYY-MM-DD format. Omit to default to a 90-day window.',
           },
         },
-        required: ['startDate', 'endDate'],
       },
     },
   },
@@ -103,18 +124,37 @@ const TOOL_DEFINITIONS = [
 
 // ── Tool Executors (called when GPT-4o fires a tool) ──────────────────────────
 
-async function find_available_slots(prisma, { specialty, startDate, endDate }) {
-  const slotWhere = { status: 'AVAILABLE' }
-  if (startDate || endDate) {
-    slotWhere.slotDate = {}
-    if (startDate) slotWhere.slotDate.gte = new Date(startDate)
-    if (endDate)   slotWhere.slotDate.lte = new Date(endDate)
-  }
+const DEFAULT_AVAILABILITY_WINDOW_DAYS = 90
+const MAX_SLOTS_RETURNED = 3
+
+async function list_providers(prisma, { specialty }) {
+  const providers = await prisma.provider.findMany({
+    where: { specialty },
+    select: {
+      providerId:        true,
+      providerFirstName: true,
+      providerLastName:  true,
+      specialty:         true,
+    },
+  })
+
+  if (!providers.length) return { found: false, message: 'No providers found for this specialty' }
+  return { found: true, providers }
+}
+
+async function find_available_slots(prisma, { providerId, specialty, startDate, endDate }) {
+  const today = new Date()
+  const start = startDate ? new Date(startDate) : today
+  const end = endDate
+    ? new Date(endDate)
+    : new Date(today.getTime() + DEFAULT_AVAILABILITY_WINDOW_DAYS * 24 * 60 * 60 * 1000)
 
   const slots = await prisma.providerSlot.findMany({
     where: {
-      ...slotWhere,
-      provider: specialty ? { specialty } : undefined,
+      status:   'AVAILABLE',
+      slotDate: { gte: start, lte: end },
+      providerId: providerId || undefined,
+      provider: !providerId && specialty ? { specialty } : undefined,
     },
     include: {
       provider: {
@@ -127,7 +167,7 @@ async function find_available_slots(prisma, { specialty, startDate, endDate }) {
       },
     },
     orderBy: [{ slotDate: 'asc' }, { slotStartTime: 'asc' }],
-    take: 10, // limit to 10 so GPT response stays concise
+    take: MAX_SLOTS_RETURNED,
   })
 
   if (!slots.length) return { available: false, message: 'No available slots found for the given criteria' }
@@ -165,10 +205,16 @@ async function book_appointment(prisma, { patientId, providerId, slotId, appoint
         data:  { status: 'BOOKED' },
       }),
     ])
-    // Fire confirmation email automatically — non-blocking, don't fail the booking if it fails.
+    // Fire confirmation + reminder emails automatically — non-blocking, don't fail the booking if either fails.
     mailer.sendConfirmationEmail(appointment).catch((e) =>
       console.error('[MAILER] Failed to send confirmation email:', e.message)
     )
+    mailer.sendReminderEmail(appointment)
+      .then(() => prisma.appointment.update({
+        where: { appointmentId: appointment.appointmentId },
+        data:  { reminderSentAt: new Date() },
+      }))
+      .catch((e) => console.error('[MAILER] Failed to send reminder email:', e.message))
     return { success: true, appointment }
   } catch (err) {
     if (err.code === 'P2002') return { success: false, error: 'Slot was just taken by another patient, please choose another' }
@@ -219,6 +265,7 @@ async function cancel_appointment(prisma, { appointmentId }) {
 
 async function executeTool(prisma, toolName, toolArgs) {
   switch (toolName) {
+    case 'list_providers':           return list_providers(prisma, toolArgs)
     case 'find_available_slots':     return find_available_slots(prisma, toolArgs)
     case 'book_appointment':         return book_appointment(prisma, toolArgs)
     case 'get_patient_appointments': return get_patient_appointments(prisma, toolArgs)

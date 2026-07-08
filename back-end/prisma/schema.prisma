@@ -109,6 +109,7 @@ model Appointment {
   appointmentDate   DateTime   @db.Date
   appointmentReason String?
   apptStatus        ApptStatus @default(PENDING)
+  reminderSentAt    DateTime?
 
   // Relations
   patient  Patient      @relation(fields: [patientId],  references: [patientId])
